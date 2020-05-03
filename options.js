@@ -12,7 +12,7 @@ function save_options() {
     var rule9   = document.getElementById('rule9').value;
     var footer  = document.getElementById('footer').value;
     var oneTaps = document.getElementById('oneTaps').checked;
-    chrome.storage.sync.set({
+    browser.storage.local.set({
         rule1: rule1,
         rule2: rule2,
         rule2b: rule2b,
@@ -31,7 +31,7 @@ function save_options() {
         status.textContent = 'Options saved.';
         setTimeout(function() {
             status.textContent = '';
-        }, 750);
+        }, 1500);
     });
 }
 
@@ -39,7 +39,7 @@ function save_options() {
 // stored in chrome.storage.
 function restore_options() {
     // Use default value color = 'red' and likesColor = true.
-    chrome.storage.sync.get({
+    browser.storage.local.get({
         rule1: "Your thread was removed under **[Rule 1](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
         rule2: "Your thread was removed under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
         rule2b: "Your thread was removed as a duplicate under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
@@ -50,7 +50,7 @@ function restore_options() {
         rule7: "Your thread was removed under **[Rule 7](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
         rule8: "Your thread was removed under **[Rule 8](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
         rule9: "Your thread was removed under **[Rule 9](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-        footer: "",
+        footer: "Please take a moment to visit the rule linked above. Many rules contain details which may not be evident by the rule title. If you have any further questions or concerns, please send us a [modmail](https://www.reddit.com/message/compose?to=/r/GlobalOffensive)!",
         oneTaps: ""
     }, function(storage) {
         document.getElementById('rule1').value     = storage.rule1;

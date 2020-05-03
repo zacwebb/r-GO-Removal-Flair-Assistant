@@ -1,6 +1,69 @@
 // Necessary to perform any API actions
 var modhash = $("form.logout input[name=uh]").val();
 
+function editFlair(thing, flairCss, flairText) {
+    $.post('https://www.reddit.com/r/globaloffensive/api/flair', {
+        api_type: 'json',
+        css_class: flairCss,
+        link: thing,
+        text: flairText,
+        uh: modhash
+    }).done(function() {
+        var fullID = "#thing" + thing;
+        $(fullID).addClass('linkflair');
+    });
+}
+
+function removeWithReason(ev, chromeGet, storage, thing, distinguish, win) {
+    var property = $(ev.target).text().toLowerCase().replace(' ', '');
+
+    if (!chromeGet.hasOwnProperty(property)) {
+        chromeGet[property] = "Your thread has been removed.  Please carefully [read our rules](https://www.reddit.com/r/GlobalOffensive/about/rules/) and ask if you have any questions.";
+    }
+
+    var removedThreadLink = 'https://redd.it/' + thing.replace('t3_', '');
+    var removalMessage = $( "#ruleText" ).val();
+    var footer = "";
+
+    if (storage.footer != "") {
+        footerText = storage.footer.replace('%%thread_link%%', removedThreadLink);
+        footer = "\n\n---\n\n" + footerText;
+    } else if (storage.footer === "") {
+        footer = "";
+    }
+
+    var reason = removalMessage + footer;
+
+    $.post('https://www.reddit.com/r/globaloffensive/api/remove', {
+        uh: modhash,
+        id: thing,
+        spam: false,
+    }).done(function() {
+        $.post('https://www.reddit.com/r/globaloffensive/api/comment', {
+            parent: thing,
+            text: reason,
+            uh: modhash,
+            api_type: 'json'
+        }).done(function(res) {
+            if (distinguish && res.json.hasOwnProperty("errors") && res.json.errors.length == 0) {
+                $.post('https://www.reddit.com/r/globaloffensive/api/distinguish/yes', {
+                    id: res.json.data.things[0].data.id,
+                    uh: modhash,
+                    sticky: true
+                }).done(function() {
+                    if ( win ) {
+                        $( win ).dialog( "close" );
+                    }
+                });
+            }
+        });
+    });
+
+    var dd = $(ev.target.parentNode).siblings('.rgo-dropdown');
+    dd.html("removed");
+    dd.removeClass('rgo-dropdown');
+}
+
 function checkNightMode() {
     function doModeLogic() {
         if($('body').hasClass('res-nightmode')) {
@@ -10,7 +73,7 @@ function checkNightMode() {
             $('<link/>', {
                 rel: 'stylesheet',
                 type: 'text/css',
-                href: chrome.runtime.getURL('style_nightmode_overrides.css'),
+                href: browser.runtime.getURL('style_nightmode_overrides.css'),
                 id: 'rgo_nightmode'
             }).appendTo('head');
         } else {
@@ -96,15 +159,8 @@ function addQuickFlair() {
                 if (flairText === 'UGC') {
                     flairText = 'User Generated Content';
                 }
-                chrome.runtime.sendMessage({
-                    contentScriptQuery: 'editFlair', 
-                    thing: id,
-                    flairCSS: flairClicked,
-                    text: flairText,
-                    mod: modhash
-                });
-                //editFlair(id, flairClicked, flairText);
-                
+                editFlair(id, flairClicked, flairText);
+
                 var dd = $(ev.target.parentNode).siblings('.rgo-qf-dropdown');
                 dd.html('flaired!');
                 dd.removeClass('rgo-qf-dropdown');
@@ -180,154 +236,55 @@ function addRemoveWithReasons() {
 
             $(ruleLink).click(function(ev) {
                 ev.preventDefault();
+                var ruleClicked = ev.target.innerHTML.replace(' ','').toLowerCase().split(':')[0];
                 var id = $(ev.target).closest('.thing').attr('data-fullname');
-                // If ctrl key is pressed when a rule is clicked with
-                // OneTap mode enabled, open a custom removal dialog.
-                if (ev.ctrlKey) {
-                    chrome.storage.sync.get(chromeGet, function(storage) {
-                        if (storage.oneTaps) {
-                            $("#ruleText").css("display", "inline");
-                            $("#ruleDialog").dialog({
-                                height  : 200,
-                                width   : 700,
-                                modal   : true,
-                                title   : 'Custom Removal',
-                                buttons : {
-                                    "Get Salt": function() {
-                                        var removedThreadLink = 'https://redd.it/' + id.replace('t3_', '');
-                                        var removalMessage = $('#ruleText').val();
-                                        var footer = "";
 
-                                        if (storage.footer != '') {
-                                            footer = "\n\n---\n\n" + storage.footer.replace('%%thread_link%%', removedThreadLink);
-                                            removalMessage += footer;
-                                        }
+                // Default values for the comments for each removal
+                var chromeGet = {
+                    rule1: "Your thread was removed under **[Rule 1](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule2: "Your thread was removed under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule2b: "Your thread was removed as a duplicate under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule3: "Your thread was removed under **[Rule 3](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule4: "Your thread was removed under **[Rule 4](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule5: "Your thread was removed under **[Rule 5](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule6: "Your thread was removed under **[Rule 6](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule7: "Your thread was removed under **[Rule 7](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule8: "Your thread was removed under **[Rule 8](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    rule9: "Your thread was removed under **[Rule 9](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    footer: "Please take a moment to visit the rule linked above. Many rules contain details which may not be evident by the rule title. If you have any further questions or concerns, please send us a [modmail](https://www.reddit.com/message/compose?to=/r/GlobalOffensive)!",
+                    oneTaps: ""
+                };
 
-                                        // This actually makes the POSTs happen and removes the thread, it also closes the dialog on completion
-                                        chrome.runtime.sendMessage({
-                                            contentScriptQuery: 'removeWithReason', 
-                                            thing: id,
-                                            text: removalMessage,
-                                            distinguish: true,
-                                            win: this,
-                                            mod: modhash
-                                        });
-                                        //$( this ).dialog('close');
-                                        //removeWithReason(id, removalMessage, distinguish = true, win = this);
+                browser.storage.local.get(chromeGet, function(storage) {
+                    // If they want one click removals, don't show dialog
+                    if ( storage.oneTaps ) {
+                        removeWithReason(ev, chromeGet, storage, id, true, this);
+                    } else { // Show dialog on each click
+                        var ruleClicked = ev.target.innerHTML.replace(' ','').toLowerCase().split(':')[0];
+                        $("#ruleText").val(chromeGet[ruleClicked]);
+                        $("#ruleText").html(chromeGet[ruleClicked]);
+                        $("#ruleText").css("display", "inline");
 
-                                        var dd = $(ev.target.parentNode).siblings('.rgo-dropdown');
-                                        dd.html('removed');
-                                        dd.removeClass('rgo-dropdown');
-                                    },
-                                    "Abort!" : function() {
-                                        $( this ).dialog( 'close' );
-                                    }
+                        $("#ruleDialog").dialog({
+                            height  : 200,
+                            width   : 700,
+                            modal   : true,
+                            title   : ev.target.innerHTML + " Removal",
+                            buttons : {
+                                "Remove and lock comment": function() {
+                                    // TODO
+                                },
+                                "Get Salt": function() {
+                                    // This actually makes the POSTs happen and removes the thread, it also closes the dialog on completion
+                                    removeWithReason(ev, chromeGet, storage, id, true, this);
+                                },
+                                "Abort!" : function() {
+                                    $( this ).dialog( "close" );
                                 }
-                            });
-                        }
-                    });
-                } else {
-                    var ruleClicked = ev.target.innerHTML.replace(' ','').toLowerCase().split(':')[0];
-
-                    // Default values for the comments for each removal
-                    var chromeGet = {
-                        rule1: "Your thread was removed under **[Rule 1](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule2: "Your thread was removed under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule2b: "Your thread was removed as a duplicate under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule3: "Your thread was removed under **[Rule 3](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule4: "Your thread was removed under **[Rule 4](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule5: "Your thread was removed under **[Rule 5](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule6: "Your thread was removed under **[Rule 6](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule7: "Your thread was removed under **[Rule 7](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule8: "Your thread was removed under **[Rule 8](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        rule9: "Your thread was removed under **[Rule 9](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                        footer: "",
-                        oneTaps: ""
-                    };
-
-                    chrome.storage.sync.get(chromeGet, function(storage) {
-                        // If they want one click removals, don't show dialog
-                        if (storage.oneTaps) {
-                            // var property = $(ev.target).text().toLowerCase().replace(' ', '');
-                            var property = ev.target.innerHTML.replace(' ','').toLowerCase().split(':')[0]
-
-                            if (!chromeGet.hasOwnProperty(property)) {
-                                chromeGet[property] = "Your thread has been removed.  Please carefully [read our rules](https://www.reddit.com/r/GlobalOffensive/about/rules/) and ask if you have any questions.";
                             }
-
-                            var removedThreadLink = 'https://redd.it/' + id.replace('t3_', '');
-                            var removalMessage = storage[property];
-                            var footer = "";
-
-                            if (storage.footer != "") {
-                                footer = "\n\n---\n\n" + storage.footer.replace('%%thread_link%%', removedThreadLink);
-                                removalMessage += footer;
-                            }
-
-                            chrome.runtime.sendMessage({
-                                contentScriptQuery: 'removeWithReason', 
-                                thing: id,
-                                text: removalMessage,
-                                distinguish: true,
-                                win: null,
-                                mod: modhash
-                            });
-                            //removeWithReason(id, removalMessage, distinguish = true, win = null);
-                            var dd = $(ev.target.parentNode).siblings('.rgo-dropdown');
-                            dd.html("removed");
-                            dd.removeClass('rgo-dropdown');
-                        } else { // Show dialog on each click
-                            var ruleClicked = ev.target.innerHTML.replace(' ','').toLowerCase().split(':')[0];
-                            $("#ruleText").val(storage[ruleClicked]);
-                            $("#ruleText").html(storage[ruleClicked]);
-                            $("#ruleText").css("display", "inline");
-
-                            $("#ruleDialog").dialog({
-                                height  : 200,
-                                width   : 700,
-                                modal   : true,
-                                title   : ev.target.innerHTML + " Removal",
-                                buttons : {
-                                    "Get Salt": function() {
-                                        var property = $(ev.target).text().toLowerCase().replace(' ', '');
-
-                                        if (!chromeGet.hasOwnProperty(property)) {
-                                            chromeGet[property] = "Your thread has been removed.  Please carefully [read our rules](https://www.reddit.com/r/GlobalOffensive/about/rules/) and ask if you have any questions.";
-                                        }
-
-                                        var removedThreadLink = 'https://redd.it/' + id.replace('t3_', '');
-                                        var removalMessage = $( "#ruleText" ).val();
-                                        var footer = "";
-
-                                        if (storage.footer != "") {
-                                            footer = "\n\n---\n\n" + storage.footer.replace('%%thread_link%%', removedThreadLink);
-                                            removalMessage += footer;
-                                        }
-
-                                        // This actually makes the POSTs happen and removes the thread, it also closes the dialog on completion
-                                        chrome.runtime.sendMessage({
-                                            contentScriptQuery: 'removeWithReason', 
-                                            thing: id,
-                                            text: removalMessage,
-                                            distinguish: true,
-                                            win: this,
-                                            mod: modhash
-                                        });
-                                        //$( this ).dialog('close');
-                                        //removeWithReason(id, removalMessage, distinguish = true, win = this);
-
-                                        var dd = $(ev.target.parentNode).siblings('.rgo-dropdown');
-                                        dd.html("removed");
-                                        dd.removeClass('rgo-dropdown');
-                                    },
-                                    "Abort!" : function() {
-                                        $( this ).dialog( "close" );
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
+                        });
+                    }
+                });
             });
             options.appendChild(ruleLink);
         }
@@ -341,19 +298,6 @@ function addRemoveWithReasons() {
         e.appendChild(li);
     });
 }
-
-// Listener for displaying responses or errors from our background scripts
-chrome.runtime.onMessage.addListener(
-    function(request, sender) {
-        if (request.status === 'error') {
-            alert('Error: ' + request.msg);
-            $("#ruleDialog").dialog('close');
-        }
-        if (request.status === 'success') {
-            $("#ruleDialog").dialog('close');
-        }
-    }
-);
 
 // Hook our functions
 $(window).on('neverEndingLoad', function () {

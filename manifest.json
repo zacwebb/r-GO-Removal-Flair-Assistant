@@ -3,58 +3,37 @@
 
     "name": "/r/GlobalOffensive Removal Assistant",
     "short_name": "/r/GO Removal Assistant",
-    "author": "Jpon9 & zebradolphin5",
+    "author": "Jpon9, zebradolphin5",
     "description": "Tired of removing stuff without giving the user notice?",
-    "version": "1.0.2",
+    "version": "1.1.8",
 
     "content_scripts": [
         {
             "matches": [
                 "*://*.reddit.com/r/GlobalOffensive",
                 "*://*.reddit.com/r/GlobalOffensive/*",
-                "*://*.reddit.com/r/GlobalOffensive/new/",
                 "*://*.reddit.com/r/globaloffensive",
                 "*://*.reddit.com/r/globaloffensive/*",
+                "*://*.reddit.com/r/GlobalOffensiveTest",
                 "*://*.reddit.com/r/GlobalOffensiveTest/*",
                 "*://*.reddit.com/r/mod/*"
             ],
             "js": [
-                "jquery-2.1.4.min.js",
-                "jquery-ui.min.js",
+                "jquery-3.3.1.js",
+                "jquery-ui.js",
                 "main.js"
             ],
             "css": [
-                "jquery-ui.min.css",
-                "jquery-ui.structure.min.css",
-                "jquery-ui.theme.min.css",
+                "jquery-ui.css",
+                "jquery-ui.structure.css",
+                "jquery-ui.theme.css",
                 "style.css"
             ]
         }
     ],
-    "background": {
-        "matches": [
-            "*://*.reddit.com/r/GlobalOffensive",
-            "*://*.reddit.com/r/GlobalOffensive/*",
-            "*://*.reddit.com/r/GlobalOffensive/new/",
-            "*://*.reddit.com/r/globaloffensive",
-            "*://*.reddit.com/r/globaloffensive/*",
-            "*://*.reddit.com/r/GlobalOffensiveTest/*",
-            "*://*.reddit.com/r/mod/*"
-        ],
-        "scripts": [
-            "background.js"
-        ],
-        "persistent": false
-    },
     "options_ui": {
         "page": "options.html",
-        "chrome_style": true
-    },
-    
-    "icons": { 
-        "16": "icon16.png",
-        "48": "icon48.png",
-        "128": "icon128.png" 
+        "chrome_style": false
     },
 
     "browser_action": {
@@ -65,6 +44,7 @@
     "permissions": [
         "activeTab",
         "storage",
+        "*://*.reddit.com/r/Jpon9",
         "*://*.reddit.com/r/GlobalOffensive",
         "*://*.reddit.com/r/GlobalOffensive/*",
         "*://*.reddit.com/r/globaloffensive",

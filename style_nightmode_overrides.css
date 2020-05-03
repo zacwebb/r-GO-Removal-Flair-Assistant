@@ -6,11 +6,16 @@
 }
 
 .ui-widget-content {
-    background-color: #202020;
+    background-color: #202020!important;
 }
 
 #ruleText {
     background-color: #373737;
     color: #CCCCCC;
     border-color: #888;
+}
+
+.ui-widget {
+    font-size: 1.1em!important;
+    font-family: Verdana, Arial, sans-serif !important;
 }

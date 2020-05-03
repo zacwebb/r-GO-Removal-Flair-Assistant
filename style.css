@@ -57,3 +57,11 @@
     background-image: -o-linear-gradient(top, #ff9a9a, #ff4040);
     background-image: linear-gradient(to bottom, #ff9a9a, #ff4040);
 }
+
+.ui-widget-header {
+    background: #d1d1d1!important;
+}
+
+.ui-widget input, .ui-widget select, .ui-widget textarea, .ui-widget button {
+    font-size: 1.1em;
+}
