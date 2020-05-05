@@ -5,3 +5,7 @@ external/
 screenshots/
 
 *.zip
+.DS_Store
+
+# Jetbrains IDE config files
+.idea
