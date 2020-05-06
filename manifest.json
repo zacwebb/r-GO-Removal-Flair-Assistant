@@ -7,6 +7,12 @@
     "description": "Tired of removing stuff without giving the user notice?",
     "version": "1.1.8",
 
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{69e336f4-c4f3-4a06-b01c-a01a095e267a}"
+        }
+    },
+
     "content_scripts": [
         {
             "matches": [
@@ -33,7 +39,8 @@
     ],
     "options_ui": {
         "page": "options.html",
-        "chrome_style": false
+        "browser_style": true,
+        "chrome_style": true
     },
 
     "browser_action": {
@@ -53,7 +60,7 @@
         "*://*.reddit.com/r/GlobalOffensiveTest/*",
         "*://*.reddit.com/r/mod/*"
     ],
-    
+
     "web_accessible_resources": [
         "style_nightmode_overrides.css"
     ]

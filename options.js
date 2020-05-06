@@ -12,7 +12,7 @@ function save_options() {
     var rule9   = document.getElementById('rule9').value;
     var footer  = document.getElementById('footer').value;
     var oneTaps = document.getElementById('oneTaps').checked;
-    browser.storage.local.set({
+    browser.storage.sync.set({
         rule1: rule1,
         rule2: rule2,
         rule2b: rule2b,
@@ -39,7 +39,7 @@ function save_options() {
 // stored in chrome.storage.
 function restore_options() {
     // Use default value color = 'red' and likesColor = true.
-    browser.storage.local.get({
+    browser.storage.sync.get({
         rule1: "Your thread was removed under **[Rule 1](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
         rule2: "Your thread was removed under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
         rule2b: "Your thread was removed as a duplicate under **[Rule 2](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
@@ -69,5 +69,4 @@ function restore_options() {
 }
 
 document.addEventListener('DOMContentLoaded', restore_options);
-document.getElementById('save').addEventListener('click',
-    save_options);
+document.getElementById('save').addEventListener('click', save_options);
