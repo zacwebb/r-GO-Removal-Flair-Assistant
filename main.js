@@ -6,6 +6,7 @@ const flairUrl   = 'https://www.reddit.com/r/globaloffensive/api/flair';
 const removeUrl  = 'https://www.reddit.com/r/globaloffensive/api/remove';
 const commentUrl = 'https://www.reddit.com/r/globaloffensive/api/comment';
 const stickyUrl  = 'https://www.reddit.com/r/globaloffensive/api/distinguish/yes';
+const lockUrl    = 'https://www.reddit.com/r/globaloffensive/api/lock';
 
 // Flairs Object as 'display text': 'id'
 const linkFlairs = {
@@ -55,12 +56,10 @@ const editFlair = async (thing, flairCss, flairText) => {
 };
 
 const removeWithReason = async (ev, chromeGet, storage, thing, distinguish, ruleClicked, ruleDialog = null) => {
-    const property = $(ev.target).text().toLowerCase().replace(' ', '');
-
     let removalMessage = $( '#ruleText' ).val();
 
-    if (!chromeGet.hasOwnProperty(property)) {
-        chromeGet[property] = 'Your thread has been removed.  Please carefully [read our rules](https://www.reddit.com/r/GlobalOffensive/about/rules/) and ask if you have any questions.';
+    if (!chromeGet.hasOwnProperty(ruleClicked)) {
+        chromeGet[ruleClicked] = 'Your thread has been removed.  Please carefully [read our rules](https://www.reddit.com/r/GlobalOffensive/about/rules/) and ask if you have any questions.';
     }
 
     if (ruleDialog === null) {
@@ -108,15 +107,17 @@ const removeWithReason = async (ev, chromeGet, storage, thing, distinguish, rule
                 if (ruleDialog) {
                     $(ruleDialog).dialog('close');
                 }
+
+                const dropDown = $(ev.target.parentNode).siblings('.rgo-dropdown');
+                dropDown.html('removed');
+                dropDown.removeClass('rgo-dropdown');
+
+                return comment;
             }
         }
     } catch (err) {
         console.log(err);
     }
-
-    const dropDown = $(ev.target.parentNode).siblings('.rgo-dropdown');
-    dropDown.html('removed');
-    dropDown.removeClass('rgo-dropdown');
 };
 
 /**
@@ -272,7 +273,7 @@ const addRemoveWithReasons = () => {
             $(ruleLink).click(async (ev) => {
                 ev.preventDefault();
                 const id = $(ev.target).closest('.thing').attr('data-fullname');
-                const ruleClicked = ev.target.innerHTML.replace(' ','').toLowerCase().split(':')[0];
+                const ruleClicked = $(ev.target).text().toLowerCase().replace(' ', '').split(':')[0];
 
                 // Default values for the comments for each removal
                 const chromeGet = {
@@ -285,7 +286,9 @@ const addRemoveWithReasons = () => {
                     rule6: "Your thread was removed under **[Rule 6](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
                     rule7: "Your thread was removed under **[Rule 7](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
                     rule8: "Your thread was removed under **[Rule 8](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
-                    rule9: "Your thread was removed under **[Rule 9](https://www.reddit.com/r/GlobalOffensive/about/rules/)**."
+                    rule9: "Your thread was removed under **[Rule 9](https://www.reddit.com/r/GlobalOffensive/about/rules/)**.",
+                    footer: "Please take a moment to visit the rule linked above. Many rules contain details which may not be evident by the rule title. If you have any further questions or concerns, please send us a [modmail](https://www.reddit.com/message/compose?to=/r/GlobalOffensive)!",
+                    oneTaps: ""
                 };
 
                 // Get rule data from browser storage
@@ -309,7 +312,13 @@ const addRemoveWithReasons = () => {
                         title   : ev.target.innerHTML + ' Removal',
                         buttons : {
                             'Remove and lock comment': async () => {
-                                // TODO
+                                const comment  = await removeWithReason(ev, chromeGet, storage, id, true, ruleClicked, ruleDialog);
+                                const {things} = comment.json.data;
+
+                                await apiRequest(lockUrl, {
+                                    id: things[0].data.id,
+                                    uh: modhash
+                                });
                             },
                             'Get Salt': () => {
                                 // This actually makes the POSTs happen and removes the thread, it also closes the dialog on completion
